@@ -4,7 +4,6 @@ The project also encompasses a great utilization of the Pandas library (specific
 <br>
 This project is a part of my third semester's course-work. It is a collaborative project.
 <br>
-*The project is still under development.
 # Collabrators :
 # Rudraksh Bhardwaj
 # Shatabdi
