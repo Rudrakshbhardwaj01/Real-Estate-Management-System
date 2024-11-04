@@ -1,5 +1,8 @@
 import pandas as pd
 from admin import Admin
+import matplotlib.pyplot as plt
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
 
 class Client:
     def __init__(self):
@@ -12,6 +15,8 @@ class Client:
             print("Press 3 to sort the properties on the basis of their prices (ascending/descending).")
             print("Press 4 to sort the properties on the basis of their total rooms [BHK] (ascending/descending).")
             print("Press 5 to book a property.")
+            print("Press 6 to calculate the EMI payable for a chosen property.")
+            print("Press 7 to generate a PDF report of a chosen property.")
             print("Enter 'back' to go back to the main menu.")
             print("Enter 'exit' to close the system.")
 
@@ -26,6 +31,10 @@ class Client:
                 self.sortByBHK()
             elif preference == '5':
                 self.bookProperty()
+            elif preference=="6":
+                self.emiCalculator()
+            elif preference=="7":
+                self.downloadPropertyPDF()
             elif preference == 'back':
                 from system import System
                 System()
@@ -176,6 +185,135 @@ class Client:
             bookings.to_csv("booking.csv", index=False)
             print("Property booked successfully.")
             
+        except FileNotFoundError:
+            print("The file 'real_estate_data.csv' was not found.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+    
+    def emiCalculator(self):
+        try:
+            data = pd.read_csv("real_estate_data.csv")
+            print("Available properties:")
+            print(data)
+
+            property_id_input = input("Enter the row number of the property to calculate EMI (1-based index): ")
+
+            try:
+                property_id = int(property_id_input) - 1
+            except ValueError:
+                print("Invalid input. Please enter a valid integer for the property ID.")
+                return
+
+            if property_id < 0 or property_id >= len(data):
+                print("Invalid property ID. Please select a number from the list shown.")
+                return
+
+            price = data.iloc[property_id]["price"]
+            print(f"Selected Property Price: {price}")
+
+            loan_term = input("Choose loan term in years (4, 6, or 8): ").strip()
+            if loan_term == "4":
+                interest_rate = 5 / 100
+                months = 4 * 12
+            elif loan_term == "6":
+                interest_rate = 7 / 100
+                months = 6 * 12
+            elif loan_term == "8":
+                interest_rate = 9 / 100
+                months = 8 * 12
+            else:
+                print("Invalid loan term. Choose 4, 6, or 8 years.")
+                return
+
+            monthly_interest_rate = interest_rate / 12
+            emi = (price * monthly_interest_rate * (1 + monthly_interest_rate) ** months) / ((1 + monthly_interest_rate) ** months - 1)
+            print(f"Monthly EMI for {loan_term} years at an interest rate of {interest_rate * 100}%: {emi:.2f}")
+
+            balances = []
+            remaining_balance = price
+
+            for month in range(1, months + 1):
+                interest_for_month = remaining_balance * monthly_interest_rate
+                principal_for_month = emi - interest_for_month
+                remaining_balance -= principal_for_month
+                balances.append(remaining_balance)
+
+            plt.figure(figsize=(10, 6))
+            plt.plot(range(1, months + 1), balances, label="Remaining Loan Balance", color="blue")
+            plt.title("Loan Balance Over Time")
+            plt.xlabel("Months")
+            plt.ylabel("Remaining Balance")
+            plt.legend()
+            plt.grid()
+            plt.show()
+
+        except FileNotFoundError:
+            print("The file 'real_estate_data.csv' was not found.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+    def downloadPropertyPDF(self):
+        try:
+            data = pd.read_csv("real_estate_data.csv")
+            print("Available properties:")
+            print(data)
+
+            property_id_input = input("Enter the row number of the property to download information as PDF (1-based index): ")
+
+            try:
+                property_id = int(property_id_input) - 1
+            except ValueError:
+                print("Invalid input. Please enter a valid integer for the property ID.")
+                return
+
+            if property_id < 0 or property_id >= len(data):
+                print("Invalid property ID. Please select a number from the list shown.")
+                return
+
+            property_details = data.iloc[property_id]
+            price = property_details["price"]
+            address = property_details["Address"]
+            house_type = property_details["House Type"]
+            bhk_type = property_details["BHK Type"]
+            garage = property_details["Garage Included"]
+            yard = property_details["Yard Available"]
+
+            loan_term = input("Choose loan term in years (4, 6, or 8): ").strip()
+            if loan_term == "4":
+                interest_rate = 5 / 100
+                months = 4 * 12
+            elif loan_term == "6":
+                interest_rate = 7 / 100
+                months = 6 * 12
+            elif loan_term == "8":
+                interest_rate = 9 / 100
+                months = 8 * 12
+            else:
+                print("Invalid loan term. Choose 4, 6, or 8 years.")
+                return
+
+            monthly_interest_rate = interest_rate / 12
+            emi = (price * monthly_interest_rate * (1 + monthly_interest_rate) ** months) / ((1 + monthly_interest_rate) ** months - 1)
+
+            pdf_file = f"Property_{property_id + 1}_Details.pdf"
+            pdf = canvas.Canvas(pdf_file, pagesize=A4)
+            pdf.setTitle(f"Property {property_id + 1} Details")
+
+            pdf.drawString(100, 800, "Property Details")
+            pdf.drawString(100, 780, f"Address: {address}")
+            pdf.drawString(100, 760, f"House Type: {house_type}")
+            pdf.drawString(100, 740, f"BHK Type: {bhk_type}")
+            pdf.drawString(100, 720, f"Garage Included: {garage}")
+            pdf.drawString(100, 700, f"Yard Available: {yard}")
+            pdf.drawString(100, 680, f"Price: {price}")
+            pdf.drawString(100, 640, "EMI Details")
+            pdf.drawString(100, 620, f"Loan Term: {loan_term} years")
+            pdf.drawString(100, 600, f"Interest Rate: {interest_rate * 100}%")
+            pdf.drawString(100, 580, f"Monthly EMI: {emi:.2f}")
+
+            pdf.save()
+            print(f"PDF generated successfully: {pdf_file}")
+
         except FileNotFoundError:
             print("The file 'real_estate_data.csv' was not found.")
         except Exception as e:
