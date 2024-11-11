@@ -64,27 +64,25 @@ class Client:
 
             min_price_input = input("Enter minimum price (or leave blank if not specified): ").strip()
             max_price_input = input("Enter maximum price (or leave blank if not specified): ").strip()
-            
             min_price = int(min_price_input) if min_price_input else None
             max_price = int(max_price_input) if max_price_input else None
-            
+
             filtered_data = data
+
             if house_type:
                 filtered_data = filtered_data[filtered_data['House Type'].str.contains(house_type, case=False, na=False)]
             if address:
                 filtered_data = filtered_data[filtered_data['Address'].str.contains(address, case=False, na=False)]
             if bhk_type:
                 filtered_data = filtered_data[filtered_data['BHK Type'].str.contains(bhk_type, case=False, na=False)]
-            if garage_included in ["yes", "no", ""]:
+            if garage_included in ["yes", "no"]:
                 filtered_data = filtered_data[filtered_data['Garage Included'].str.lower() == garage_included]
-            if yard_available in ["yes", "no", ""]:
+            if yard_available in ["yes", "no"]:
                 filtered_data = filtered_data[filtered_data['Yard Available'].str.lower() == yard_available]
-            
             if min_price is not None:
                 filtered_data = filtered_data[filtered_data['price'] >= min_price]
             if max_price is not None:
                 filtered_data = filtered_data[filtered_data['price'] <= max_price]
-
             if not filtered_data.empty:
                 print(filtered_data)
             else:
@@ -141,8 +139,14 @@ class Client:
         print("\n---- Booking Property ----")
         try:
             data = pd.read_csv("real_estate_data.csv")
+
+            available_properties = data[data['available'] == 'yes']
+            if available_properties.empty:
+                print("No available properties to book.")
+                return
+
             print("Available properties to book:")
-            print(data)
+            print(available_properties)
 
             property_id_input = input("Enter the row number of the property you want to book (1-based index): ")
 
@@ -152,8 +156,8 @@ class Client:
                 print("Invalid input. Please enter a valid integer for the property ID.")
                 return
 
-            if property_id < 0 or property_id >= len(data):
-                print("Invalid property ID. Please select a number from the list shown.")
+            if data.iloc[property_id]["available"] == "no":
+                print("This property has already been booked and is no longer available.")
                 return
 
             client_name = input("Enter your name: ").strip()
@@ -179,16 +183,19 @@ class Client:
                 bookings = pd.DataFrame(columns=booking_details.keys())
 
             new_booking_df = pd.DataFrame([booking_details])
-
             bookings = pd.concat([bookings, new_booking_df], ignore_index=True)
-
             bookings.to_csv("booking.csv", index=False)
+
+            data.at[property_id, "available"] = "no"
+            data.to_csv("real_estate_data.csv", index=False)
+
             print("Property booked successfully.")
             
         except FileNotFoundError:
             print("The file 'real_estate_data.csv' was not found.")
         except Exception as e:
             print(f"An error occurred: {e}")
+
     
     def emiCalculator(self):
         try:
@@ -306,6 +313,7 @@ class Client:
             pdf.drawString(100, 720, f"Garage Included: {garage}")
             pdf.drawString(100, 700, f"Yard Available: {yard}")
             pdf.drawString(100, 680, f"Price: {price}")
+
             pdf.drawString(100, 640, "EMI Details")
             pdf.drawString(100, 620, f"Loan Term: {loan_term} years")
             pdf.drawString(100, 600, f"Interest Rate: {interest_rate * 100}%")
