@@ -80,6 +80,7 @@ class Admin:
             price = int(input("Enter Price: ").strip())
 
             data = pd.read_csv("real_estate_data.csv")
+
             new_property = {
                 "House Type": house_type,
                 "Address": address,
@@ -88,10 +89,12 @@ class Admin:
                 "Yard Available": yard_available,
                 "price": price
             }
-            data = data.append(new_property, ignore_index=True)
 
+            new_property_df = pd.DataFrame([new_property])
+            data = pd.concat([data, new_property_df], ignore_index=True)
             data.to_csv("real_estate_data.csv", index=False)
             print("New property added successfully.")
+
         except FileNotFoundError:
             print("The file 'real_estate_data.csv' was not found.")
         except ValueError:
