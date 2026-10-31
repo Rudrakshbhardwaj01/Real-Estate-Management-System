@@ -4,7 +4,4 @@ The project also encompasses a great utilization of various Python libraries lik
 <br>
 This project is a part of my third semester's course-work. It is a collaborative project.
 <br>
-# Collabrators :
-# Rudraksh Bhardwaj
-# Shatabdi
-# Harshita
+
